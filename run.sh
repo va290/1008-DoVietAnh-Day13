@@ -36,7 +36,7 @@ fi
 # ENGINE=omni (default)  -> OmniRoute gateway (config model = claude/claude-haiku-...).
 # ENGINE=openai          -> real OpenAI api.openai.com (set config model = gpt-4o-mini;
 #                           cheaper/faster but costs real money).
-ENGINE="${ENGINE:-omni}"
+ENGINE="${ENGINE:-openai}"
 if [ "$ENGINE" = "omni" ]; then
   ENGINE_KEY="${OMNI_API_KEY:?set OMNI_API_KEY in .env}"
   ENGINE_BASE="${OMNI_BASE_URL:-http://localhost:20128/v1}"

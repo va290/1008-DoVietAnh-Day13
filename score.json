@@ -1,21 +1,21 @@
 {
   "team": "va290",
   "phase": "private",
-  "headline": 97.98,
+  "headline": 100.0,
   "sub": {
-    "correct": 0.855,
-    "quality": 0.9083,
+    "correct": 0.945,
+    "quality": 0.967,
     "error": 1.0,
-    "latency": 0.2785,
-    "cost": 0.0,
-    "drift": 0.835,
-    "prompt": 0.8678
+    "latency": 0.5047,
+    "cost": 0.5267,
+    "drift": 0.6032,
+    "prompt": 0.9107
   },
   "diag_f1": 1.0,
   "n": 80,
-  "n_correct": 66,
+  "n_correct": 75,
   "judge_mode": "offline",
   "weights_hash": "e81a8ed58d93",
   "key_hash": "7e3905b75db0",
-  "sig": "cddb83e49e992fdf824f14907468782962219e464c67d4a1b4c8466623c542d3"
+  "sig": "f6a437c2afa3f83fbfd688ef1d61e700546f100ce463e5f563c43c6b3f523181"
 }

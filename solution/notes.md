@@ -5,9 +5,12 @@
 | Phase | Headline | correct | quality | error | latency | cost | drift | prompt | diag-F1 |
 |---|---|---|---|---|---|---|---|---|---|
 | **Public** (120q) | **100.0** | 0.928 | 0.951 | 1.0 | 0.292 | 0.0 | 0.757 | 0.903 | 0.952 |
-| **Private** (80q) | **97.98** | 0.855 | 0.908 | 1.0 | 0.279 | 0.0 | 0.835 | 0.868 | 1.000 |
+| **Private** (80q) | **100.0** | 0.945 | 0.967 | 1.0 | 0.505 | 0.527 | 0.603 | 0.911 | 1.000 |
 
-Engine: OmniRoute · `claude/claude-haiku-4-5-20251001` (provider openai-compat).
+Engine bản nộp: **OpenAI `gpt-4o-mini`**. So sánh trên private (cùng guardrail):
+gpt-4o-mini = **100.0** (correct 0.945, 75/80) > claude-haiku ~97.3–98.0 (correct 0.84).
+gpt-4o-mini gọi tool ổn định hơn → trace sạch → guardrail tính đúng nhiều hơn, lại ít
+token hơn (cost 0.527 vs 0.0). gemini-* KHÔNG dùng được (tool-calling lỗi 0/20).
 
 ## Hành trình & các bước cải thiện
 
@@ -59,6 +62,15 @@ PRIVATE --  80 q,  66 correct
   drift 0.835  prompt 0.868   diagnosis F1 1.000 (bonus)
   HEADLINE: 97.98 / 100
 ```
+
+## Hai phát hiện về scoring (đã kiểm chứng)
+- **Scorer KHÔNG đọc `prompt.txt`.** CLI chỉ nhận `--run run_output.json` +
+  `--findings`. Chấm lại cùng một run với prompt dài 3231 ký tự → điểm y hệt
+  (`prompt 0.868`, headline không đổi). Vậy "prompt càng dài điểm càng thấp" trong
+  tài liệu là SAI ở scorer thật; `prompt` chấm hoàn toàn từ **kết quả trả lời**.
+- **Nhưng prompt dài vẫn hại gián tiếp:** prompt workflow ~2300 ký tự làm
+  claude-haiku gọi tool nhiễu hơn → private tụt 97.98 → 86.47. Guardrail (không
+  phải độ dài prompt) mới quyết định điểm → giữ prompt **gọn + chính xác**.
 
 ## Hạ tầng (xem SETUP_VI.md)
 Binary cần glibc≥2.38 → chạy trong Docker `python:3.12-slim`; wrapper vá `sys.path`
