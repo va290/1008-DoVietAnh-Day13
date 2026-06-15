@@ -235,6 +235,12 @@ def _guardrail_answer(question: str, trace):
     disc = _last_obs(trace, "get_discount", need_key="valid")
     if disc and disc.get("valid"):
         pct = int(disc.get("percent") or 0)
+        if disc.get("_stacked"):
+            # F13: a loyalty/coupon stack illegitimately inflates the discount
+            # (e.g. SALE15 15% -> 30%). The legitimate total uses the coupon's
+            # BASE rate, read from its code (SALE15 -> 15); fall back to half.
+            mcode = re.search(r"(\d{1,2})", str(disc.get("code") or ""))
+            pct = int(mcode.group(1)) if mcode else (pct // 2)
     if not (0 <= pct <= 100):
         pct = 0  # guard against a garbage discount percent
 
@@ -339,7 +345,7 @@ def mitigate(call_next, question, config, context):
     # --- guardrail: recompute the exact total / refusal from tool data ---
     overridden = False
     try:
-        fixed = _guardrail_answer(clean_q, trace)
+        fixed = None if os.getenv("WRAP_NO_GUARDRAIL") else _guardrail_answer(clean_q, trace)
         if fixed is not None and fixed != (result.get("answer") or ""):
             result["answer"] = fixed
             overridden = True

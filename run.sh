@@ -60,6 +60,7 @@ docker run --rm --network host \
   -e OPENAI_API_KEY="$ENGINE_KEY" \
   ${BASE_ENV[@]+"${BASE_ENV[@]}"} \
   -e OBS_BACKEND=file \
+  -e WRAP_NO_GUARDRAIL="${WRAP_NO_GUARDRAIL:-}" \
   -e LANGFUSE="$LANGFUSE" -e PHASE="$PHASE" \
   -e LANGFUSE_PUBLIC_KEY="${LANGFUSE_PUBLIC_KEY:-}" \
   -e LANGFUSE_SECRET_KEY="${LANGFUSE_SECRET_KEY:-}" \
