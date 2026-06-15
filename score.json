@@ -1,0 +1,21 @@
+{
+  "team": "va290",
+  "phase": "public",
+  "headline": 100.0,
+  "sub": {
+    "correct": 0.9283,
+    "quality": 0.9507,
+    "error": 1.0,
+    "latency": 0.2922,
+    "cost": 0.0,
+    "drift": 0.7566,
+    "prompt": 0.9031
+  },
+  "diag_f1": 0.952,
+  "n": 120,
+  "n_correct": 109,
+  "judge_mode": "offline",
+  "weights_hash": "e81a8ed58d93",
+  "key_hash": "9a800fa6968d",
+  "sig": "b58e101e551d426ec0c83d4c5bc72a9ea3eb227a843de8d557a5f3d3c5d928e2"
+}

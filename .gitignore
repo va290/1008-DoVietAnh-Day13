@@ -15,3 +15,5 @@ score.json
 dashboard_summary.json
 .env
 .DS_Store
+# scratch/debug sim outputs (official run_output.json/score.json stay at root for submission)
+runs/

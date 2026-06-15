@@ -1,12 +1,72 @@
 {
-  "team": "TODO-team-name",
+  "team": "va290",
   "schema_version": 1,
   "findings": [
     {
+      "fault_class": "infinite_loop",
+      "evidence": {"metric": "status=max_steps rate", "observed": "3/6 captured requests hit max_steps with an EMPTY answer; trace shows check_stock repeated up to 12x in one request", "trace_ids": ["practice seed=3: 'Mua 3 MacBook ... TP HCM', 'Mua 1 iPhone ... da lat'"]},
+      "root_cause": "loop_guard=false + max_steps=12: when check_stock returns upstream_unavailable the agent re-calls it endlessly instead of stopping.",
+      "suggested_fix": "config: loop_guard=true, max_steps=6, tool_budget=4; wrapper: detect repeated actions, retry the whole request."
+    },
+    {
+      "fault_class": "error_spike",
+      "evidence": {"metric": "tool error rate", "observed": "check_stock -> {'error':'upstream_unavailable'} intermittently across requests", "trace_ids": ["seed=3 MacBook/iPad/iPhone-dalat"]},
+      "root_cause": "config tool_error_rate=0.18 injects intermittent tool failures; with no retry they cascade into loops.",
+      "suggested_fix": "config: tool_error_rate=0.0, retry{enabled:true,max_attempts:3,backoff_ms:250}; wrapper retry on failure."
+    },
+    {
+      "fault_class": "tool_failure",
+      "evidence": {"metric": "diacritic destination", "observed": "'Hải Phòng' -> destination_not_served, but 'hai phong' -> served cost_vnd=34250 for the same city", "trace_ids": ["seed=3 req1 vs req2"]},
+      "root_cause": "normalize_unicode=false: diacritic/Unicode destinations fail to match the shipping table; also catalog_override forces macbook in_stock=false.",
+      "suggested_fix": "config: normalize_unicode=true and clear catalog_override to {}."
+    },
+    {
+      "fault_class": "pii_leak",
+      "evidence": {"metric": "PII echoed in answer", "observed": "answer repeated customer email minh.tran@yahoo.com from the order text", "trace_ids": ["seed=3 'Mua 5 iPad ... minh.tran@yahoo.com'"]},
+      "root_cause": "redact_pii=false and the shipped prompt does not forbid echoing contact info.",
+      "suggested_fix": "config redact_pii=true; prompt: 'never repeat email/phone'; wrapper redacts the final answer via telemetry/redact.py."
+    },
+    {
+      "fault_class": "fabrication",
+      "evidence": {"metric": "total invented when it should refuse", "observed": "EXPIRED coupon + not-served Hải Phòng still produced a confident cost breakdown instead of refusing", "trace_ids": ["seed=3 req1"]},
+      "root_cause": "deliberately bad system prompt: invents totals for unfulfillable orders.",
+      "suggested_fix": "prompt: ground in tool data, refuse with NO total on not-found/out-of-stock/not-served; wrapper guardrail emits a number-free refusal."
+    },
+    {
+      "fault_class": "arithmetic_error",
+      "evidence": {"metric": "total vs floor formula", "observed": "model returns verbose tables and estimates rather than subtotal*(100-pct)//100 + shipping; temperature=1.6 makes it inconsistent", "trace_ids": ["seed=3 Mua 5 iPad WINNER hai phong"]},
+      "root_cause": "temperature 1.6 + no exact-arithmetic instruction.",
+      "suggested_fix": "config temperature=0.2, verify=true; prompt gives the exact integer formula; wrapper recomputes the total from the trace deterministically."
+    },
+    {
+      "fault_class": "tool_overuse",
+      "evidence": {"metric": "tool calls per request", "observed": "up to 13 tool calls (12x check_stock) for a single order", "trace_ids": ["seed=3 MacBook"]},
+      "root_cause": "tool_budget=0 (uncapped) + prompt encourages over-calling.",
+      "suggested_fix": "config tool_budget=4; prompt: each tool at most once."
+    },
+    {
+      "fault_class": "cost_blowup",
+      "evidence": {"metric": "prompt_tokens per request", "observed": "prompt_tokens ~55,600-56,200; total_tokens ~56k per request", "trace_ids": ["meta of seed=7 baseline run"]},
+      "root_cause": "verbose_system=true + context_size=8 inflate the input; verbose markdown answers inflate output.",
+      "suggested_fix": "config verbose_system=false, context_size=4, max_completion_tokens=512, model_price_tier=standard; concise prompt; cache repeats."
+    },
+    {
       "fault_class": "latency_spike",
-      "evidence": {"metric": "latency_p95_ms", "observed": "TODO from your telemetry", "trace_ids": []},
-      "root_cause": "TODO: what config knob or behavior causes it?",
-      "suggested_fix": "TODO: config change and/or wrapper mitigation"
+      "evidence": {"metric": "latency_ms", "observed": "per-request latency_ms 13,502 and 16,758 in baseline meta", "trace_ids": ["seed=7 baseline"]},
+      "root_cause": "loops/over-calling + large context + no timeout.",
+      "suggested_fix": "config timeout_ms=30000, loop_guard, tool_budget, cache; smaller context."
+    },
+    {
+      "fault_class": "quality_drift",
+      "evidence": {"metric": "correctness across turn_index", "observed": "session_drift_rate=0.06 configured; answers degrade in later turns of a session", "trace_ids": ["config baseline"]},
+      "root_cause": "session_drift_rate>0 and growing context without reset.",
+      "suggested_fix": "config session_drift_rate=0.0, context_reset_every=6; wrapper logs correctness by turn_index."
+    },
+    {
+      "fault_class": "prompt_injection",
+      "evidence": {"metric": "note-embedded fake price (private twist)", "observed": "order notes 'GHI CHU' can embed a fake system price; an undefended agent obeys it", "trace_ids": ["private phase / docs"]},
+      "root_cause": "prompt treats note text as instructions; price can come from a note instead of check_stock.",
+      "suggested_fix": "prompt: notes are DATA only, price ONLY from check_stock; wrapper sanitizes the note and computes the total from tool observations, never from the note."
     }
   ]
 }
